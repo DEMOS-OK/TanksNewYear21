@@ -9,20 +9,26 @@ class Game():
     def __init__(self, settings, screen):
         '''Конструктор класса'''
         
+        #Вывод главных объектов на уровень класса
         self.settings = settings
         self.screen   = screen
     
+        #Идёт игра или нет (для меню)
         self.status = True
 
+        #Инициализация объектов
         self.init_game_objects()
         self.physics = Physics(self.settings, self.screen, self.earth)
 
 
     def init_game_objects(self):
         '''Инициализирует игровые объекты'''
+
+        #Танки
         self.tank1 = Tank(self.settings, self.screen, 1)
         self.tank2 = Tank(self.settings, self.screen, 2)
 
+        #Земля
         self.earth = Earth(self.settings, self.screen)
 
 
@@ -34,7 +40,7 @@ class Game():
             self.object_physics() #Обновляем события в мире физики для объектов, ага
             self.update_objects() #Обновляем объекты
 
-            pygame.display.flip()
+            pygame.display.flip() #Перерисовываем кадр
     
     
     def check_events(self):
@@ -47,6 +53,8 @@ class Game():
 
     def check_key_events(self, event):
         '''Проверяет события на нажатие клавиш'''
+        
+        #Словари типа {кнопка: действие}
         moving_dict = {
             pygame.K_a: '1_left',
             pygame.K_d: '1_right',
@@ -59,6 +67,10 @@ class Game():
             pygame.K_s: '1_down',
             pygame.K_UP: '2_up',
             pygame.K_DOWN: '2_down',
+        }
+        fire_dict = {
+            pygame.K_g: '1_fire',
+            pygame.K_k: '2_fire',
         }
 
         if event.type == pygame.KEYDOWN or event.type == pygame.KEYUP:
@@ -77,8 +89,12 @@ class Game():
                 command = 'self.tank(n).edit_angle([direction])'
                 direction = angle_dict[event.key].split('_')
                 command = command.replace('(n)', direction[0])
-                command = command.replace(
-                    '[direction]', "\'" + direction[1] + "\'")
+                command = command.replace('[direction]', "\'" + direction[1] + "\'")
+                exec(command)
+            
+            #Стреляем из нужного танка
+            if event.key in fire_dict.keys() and event.type == pygame.KEYUP:
+                command = 'self.tank' + fire_dict[event.key].split('_')[0] + '.fire()'
                 exec(command)
     
 
@@ -89,9 +105,15 @@ class Game():
         #Рисуем землю
         self.screen.blit(self.earth.image, (self.earth.rect.x, self.earth.rect.y))
 
-        #Рисуем танки
+
+        #Рисуем танки и их снаряды
         self.screen.blit(self.tank1.image, (self.tank1.rect.x, self.tank1.rect.y))
+        if hasattr(self.tank1, 'bullet'):
+            self.screen.blit(self.tank1.bullet.rotated_image, (self.tank1.bullet.rect.x, self.tank1.bullet.rect.y))
+
         self.screen.blit(self.tank2.image, (self.tank2.rect.x, self.tank2.rect.y))
+        if hasattr(self.tank2, 'bullet'):
+            self.screen.blit(self.tank2.bullet.rotated_image, (self.tank2.bullet.rect.x, self.tank2.bullet.rect.y))
     
 
     def object_physics(self):
@@ -99,9 +121,13 @@ class Game():
 
         #Подвергаем танки воздействию гравитации
         self.physics.gravitation(self.tank1)
+        if hasattr(self.tank1, 'bullet'):
+            self.physics.gravitation(self.tank1.bullet)
         self.physics.gravitation(self.tank2)
+        if hasattr(self.tank2, 'bullet'):
+            self.physics.gravitation(self.tank2.bullet)
 
-        #Ограничиваем движения по холмам
+        #Ограничиваем движения по холмам и уход за границы
         self.physics.barrier(self.tank1)
         self.physics.barrier(self.tank2)
     
