@@ -42,4 +42,12 @@ class Physics():
         
         if (obj.rect.x + obj.width) >= self.settings.screen['size'][0]:
             obj.moving_right = False
-        
+    
+
+    def collisions(self, tank, tank_shooter):
+        '''Проверяет столкновение пули и танка'''
+        #Масочная коллизия для точности
+        if pygame.sprite.collide_mask(tank, tank_shooter.bullet):
+            tank.attacked(tank_shooter.power)
+            tank_shooter.hits_count += 1
+            delattr(tank_shooter, 'bullet') #Удаляем пулю

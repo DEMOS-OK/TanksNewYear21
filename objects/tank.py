@@ -24,13 +24,24 @@ class Tank(Sprite):
         #Под каким углом стреляет танк
         self.angle = 0  # Число от 0 до 60
 
+        #Здоровье танка
+        self.max_health = 100
+        self.health = self.max_health
+
+        #Параметры танка
+        self.basic_power = 5 #Базовый урон
+        self.power = 5 #Урон в данный момент
+        self.hits_count = 0 #Число попаданий по противнику
+        self.hit_increase = 1 #Увеличение урона от одного попадания
+
         #Всё, что касается изображений
-        self.image    = pygame.image.load('Data/Images/Tanks/' + self.tank_type + 'Tank' + str(self.angle) + '.png') #Загружаем изображение
-        self.img_path = 'Data/Images/Tanks/' + self.tank_type + 'Tank' + str(self.angle) + '.png' #Сохраняем путь
-        self.mask     = pygame.mask.from_surface(self.image) #Делаем маску по прозрачному фону
-        self.rect     = self.image.get_rect() #Получаем "прямоугольник" объекта
-        self.width    = self.image.get_width() #Получаем ширину объекта
-        self.height   = self.image.get_height() #получаем высоту объекта
+        self.image       = pygame.image.load('Data/Images/Tanks/' + self.tank_type + 'Tank' + str(self.angle) + '.png') #Загружаем изображение
+        self.img_path    = 'Data/Images/Tanks/' + self.tank_type + 'Tank' + str(self.angle) + '.png' #Сохраняем путь
+        self.mask        = pygame.mask.from_surface(self.image) #Делаем маску по прозрачному фону
+        self.rect        = self.image.get_rect() #Получаем "прямоугольник" объекта
+        self.width       = self.image.get_width() #Получаем ширину объекта
+        self.height      = self.image.get_height() #получаем высоту объекта
+        self.img_timeout = 0 #Время, в течение которого показывается картинка атакованного танка
 
         #Располагаем в зависимости от номера игрока
         if player == 1: #Первого игрока в левой части
@@ -65,6 +76,9 @@ class Tank(Sprite):
         self.update_trunk_coords() #Обновляем координаты ствола
         if hasattr(self, 'bullet'): #Обновляем пулю, если существует.
             self.bullet.update()
+        
+        #Просчитываем мощь танка
+        self.power = round((self.basic_power * self.health / self.max_health) + (self.hit_increase * self.hits_count), 1)
     
 
     def move(self):
@@ -83,6 +97,12 @@ class Tank(Sprite):
             #Загружаем изображение и запоминаем его путь
             self.image = pygame.image.load('Data/Images/Tanks/' + self.tank_type + 'Tank' + str(self.angle) + '.png')
             self.img_path = 'Data/Images/Tanks/' + self.tank_type + 'Tank' + str(self.angle) + '.png'
+        
+        if self.img_timeout > 0:
+            self.img_timeout -= 1
+
+            if self.img_timeout == 0:
+                self.image = pygame.image.load('Data/Images/Tanks/' + self.tank_type + 'Tank' + str(self.angle) + '.png')
                 
 
     def update_trunk_coords(self):
@@ -109,17 +129,37 @@ class Tank(Sprite):
 
     def fire(self):
         '''Выпускает пульку :D '''
-        if self.tank_type == 'Left':
-            position = (self.trunk_x, self.trunk_y)
-            angle = self.angle
-            vx = 20
-        elif self.tank_type == 'Right':
-            position = (self.trunk_x - 45, self.trunk_y) #Здесь 45 - это ширина пули, слабое место в коде
-            angle = -self.angle
-            vx = -20
+        if not self.check_bullet():
+            if self.tank_type == 'Left':
+                position = (self.trunk_x, self.trunk_y)
+                angle = self.angle
+                vx = 20
+            elif self.tank_type == 'Right':
+                position = (self.trunk_x - 45, self.trunk_y) #Здесь 45 - это ширина пули, слабое место в коде
+                angle = -self.angle
+                vx = -20
 
-        #Создаём пулю и задаём ей скорость
-        self.bullet = Bullet(self.settings, self.screen, position, self.tank_type, angle)
-        self.bullet.vx = vx * cos(radians(self.angle))
-        self.bullet.vg = -20 * sin(radians(self.angle))
+            #Создаём пулю и задаём ей скорость
+            self.bullet = Bullet(self.settings, self.screen, position, self.tank_type, angle)
+            self.bullet.vx = vx * cos(radians(self.angle))
+            self.bullet.vg = -20 * sin(radians(self.angle))
+    
+
+    def check_bullet(self):
+        '''Проверяет, есть ли пуля, летящая в данный момент'''
+        if hasattr(self, 'bullet'):
+            if self.bullet.vg == 0:
+                return False
+            return True
+        else:
+            return False
+        
+
+
+    def attacked(self, power):
+        '''Что происходит с танком, если он был атакован'''
+        self.health -= power #Уменьшается хп
+        self.health = round(self.health, 1)
+        self.image = pygame.image.load('Data/Images/Tanks/' + self.tank_type + 'TankAttacked.png') #Меняется картинка
+        self.img_timeout = 5 #на вот такое вот время (хз, сколько это)
     

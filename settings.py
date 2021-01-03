@@ -12,7 +12,10 @@ class Settings():
         screen_settings = {
             'size': (1200, 600),
             'bg_color': (240, 240, 240),
-            'bg': pygame.image.load("Data/Images/Background.png")
+            'bg': pygame.image.load("Data/Images/Background.png"),
+            'font_color': (255, 255, 255),
+            'font_size': 18,
+            'graphics': 1,
         }
 
         return screen_settings

@@ -1,6 +1,6 @@
 import pygame
 from settings import Settings
-from game     import Game
+from game import Game
 
 def start():
     #Инициализируем класс с игровыми настройками
